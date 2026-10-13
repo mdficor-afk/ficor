@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'">
+  <title>FICOR Threads 인증 콜백</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f5f6f8;color:#17191d;font-family:system-ui,-apple-system,'Malgun Gothic',sans-serif;padding:24px}main{width:min(100%,540px);background:white;padding:32px;border:1px solid #e3e5e8;border-radius:16px}h1{font-size:23px;margin:0 0 12px}p{line-height:1.7;color:#555e6a}textarea{width:100%;min-height:112px;resize:vertical;padding:12px;background:#f5f6f8;border:1px solid #d6d9e0;border-radius:8px;overflow-wrap:anywhere}button{margin-top:12px;background:#17191d;color:white;border:0;border-radius:8px;padding:12px 16px;cursor:pointer}#message{font-weight:600;color:#191d23}small{display:block;color:#6a727d;margin-top:18px;line-height:1.6}</style>
+</head>
+<body>
+  <main>
+    <h1>FICOR Threads 인증</h1>
+    <p id="message">인증 결과를 확인하는 중입니다.</p>
+    <section id="success" hidden>
+      <p>아래 코드는 일회용 인증 정보입니다. <strong>채팅이나 공개 저장소에 공유하지 마세요.</strong> 인증을 시작했던 본인 Windows 터미널에만 전달하세요.</p>
+      <textarea id="code" readonly aria-label="일회용 인증 코드"></textarea>
+      <button type="button" id="copy">인증 코드 복사</button>
+      <p id="copyStatus" role="status"></p>
+    </section>
+    <small>이 페이지는 외부 스크립트나 API로 인증 코드를 전송하지 않습니다. 앱 시크릿이나 액세스 토큰은 이 페이지에 입력하지 마세요.</small>
+  </main>
+  <script>
+    (function () {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+      const state = url.searchParams.get('state');
+      const error = url.searchParams.get('error');
+      const description = url.searchParams.get('error_description');
+      window.history.replaceState(null, '', url.pathname);
+      const msg = document.getElementById('message');
+      if (error) {
+        msg.textContent = '인증이 완료되지 않았습니다: ' + (description || error);
+        return;
+      }
+      if (!code) {
+        msg.textContent = '아직 인증 코드가 없습니다. Threads 인증 과정을 완료한 뒤 이 페이지로 돌아오세요.';
+        return;
+      }
+      msg.textContent = '인증 코드를 받았습니다.';
+      document.getElementById('success').hidden = false;
+      document.getElementById('code').value = code;
+      // CSRF 방지를 위한 state 대조는 반드시 인증을 시작한 로컬 프로그램에서 수행해야 합니다.
+      if (state) msg.textContent += ' 로컬 프로그램에서 state 일치 여부도 확인하세요.';
+      document.getElementById('copy').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(code); document.getElementById('copyStatus').textContent = '복사 완료. 로컬 터미널에만 사용하세요.'; }
+        catch { document.getElementById('code').select(); document.getElementById('copyStatus').textContent = '자동 복사가 실패했습니다. 선택된 코드를 직접 복사하세요.'; }
+      });
+    })();
+  </script>
+</body>
+</html>
